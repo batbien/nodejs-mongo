@@ -3,7 +3,8 @@
 const expect = require('expect');
 const request = require('supertest');
 
-const { app } = require('../server');
+const {db} = require("../db/mongoose");
+const { app } = require("../server");
 const { Todo } = require('../models/todo');
 
 beforeEach("Clearing todos collection", (done) => {
@@ -54,5 +55,24 @@ describe('Test POST /todos', () => {
           done();
         });
       });
+  });
+});
+
+describe("Test GET /todos", () => {
+
+  it("should return the correct set of todos", done => {
+    // First init the todos collection
+    new Todo({ text: "foo" }).save().then().catch(err => done(err));
+    new Todo({ text: "bar" }).save().then().catch(err => done(err));
+
+    request(app)
+      .get("/todos")
+      .expect(200)
+      .expect(res => {
+        expect(res.body.length).toBe(2);
+        expect(res.body[0].text).toBe("foo");
+        expect(res.body[1].text).toBe("bar");
+      })
+      .end(done);
   });
 });

@@ -20,6 +20,12 @@
     },
     "complete_strings": {
       "maxLength": 15
+    },
+    "es_modules": {},
+    "requirejs": {
+      "baseURL": "",
+      "paths": "",
+      "override": ""
     }
   }
 }
