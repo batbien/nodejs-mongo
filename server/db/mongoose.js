@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
-const {ObjectID} = require('mongodb');
 
-mongoose.connect('mongodb://localhost:27017/TodoApp');
+mongoose.connect(process.env.USER === "nhd"
+? 'mongodb://localhost:27017/TodoApp'
+: "mongodb://tabneib:foobar123@ds143474.mlab.com:43474/todoapp_tabneib");
 
 module.exports = {
-  mongoose,
-  ObjectID
+  mongoose
 }
