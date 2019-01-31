@@ -3,7 +3,7 @@
 const expect = require('expect');
 const request = require('supertest');
 
-const {db} = require("../db/mongoose");
+const { ObjectID } = require("../db/mongoose");
 const { app } = require("../server");
 const { Todo } = require('../models/todo');
 
@@ -62,17 +62,77 @@ describe("Test GET /todos", () => {
 
   it("should return the correct set of todos", done => {
     // First init the todos collection
-    new Todo({ text: "foo" }).save().then().catch(err => done(err));
-    new Todo({ text: "bar" }).save().then().catch(err => done(err));
-
-    request(app)
-      .get("/todos")
-      .expect(200)
-      .expect(res => {
-        expect(res.body.length).toBe(2);
-        expect(res.body[0].text).toBe("foo");
-        expect(res.body[1].text).toBe("bar");
+    Todo.insertMany([
+        { text: "foo" },
+        { text: "bar" }
+      ]).then(() => {
+        request(app)
+          .get("/todos")
+          .expect(200)
+          .expect(res => {
+            expect(res.body.length).toBe(2);
+            expect(res.body[0].text).toBe("foo");
+            expect(res.body[1].text).toBe("bar");
+          })
+          .end(done);
       })
-      .end(done);
+      .catch(e => {
+        done(e);
+      });
   });
+
+});
+
+describe("Test GET /todos/:id", () => {
+
+  it("should return status 200 & the correct todo", done => {
+    // First init the todos collection
+    var text = "foo";
+    new Todo({ text }).save()
+      .then(() => {
+        // Get the id
+        Todo.find({ text })
+          .exec()
+          .then(todos => {
+            var id = todos[0]._id;
+            request(app)
+              .get(`/todos/${id}`)
+              .expect(200)
+              .end((err, res) => {
+                if (err)
+                  return done(err);
+                expect(res.body._id).toEqual(id);
+                expect(res.body.text).toEqual(todos[0].text);
+                expect(res.body.completed).toEqual(todos[0].completed);
+                expect(res.body.completedAt).toEqual(todos[0].completedAt);
+                done();
+              });
+          })
+          .catch(e => {
+            done(e);
+          });
+      })
+      .catch(err => done(err));
+  });
+
+  it("should return status 404 & the correct todo", done => {
+    // First init the todos collection
+    var text = "foo";
+    var id = 1234;
+    var id_ = new ObjectID(4321).toHexString();
+    new Todo({ text, id }).save()
+      .then(() => {
+        // Get the id
+        request(app)
+          .get(`/todos/${id_}`)
+          .expect(404)
+          .end((err, res) => {
+            if (err)
+              return done(err);
+            done();
+          });
+      })
+      .catch(err => done(err));
+  });
+
 });
