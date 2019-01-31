@@ -3,7 +3,7 @@
 const expect = require('expect');
 const request = require('supertest');
 
-const { ObjectID } = require("../db/mongoose");
+const { ObjectID } = require("mongodb");
 const { app } = require("../server");
 const { Todo } = require('../models/todo');
 
@@ -134,5 +134,91 @@ describe("Test GET /todos/:id", () => {
       })
       .catch(err => done(err));
   });
+
+});
+
+describe("DELETE /todos/:id", () => {
+
+  it("should return 200 and delete one todo with the given id", (done) => {
+    var _id = new ObjectID(1234).toHexString();
+    var text = "foo";
+    new Todo({ text, _id }).save()
+      .then(_ => {
+        request(app)
+          .delete(`/todos/${_id}`)
+          .expect(200)
+          .end((err, res) => {
+            if (err)
+              return done(err);
+            expect(res.body._id).toBe(_id);
+            // Deleted the correct todo
+            Todo.findById(_id).exec()
+              .then(todo => {
+                expect(todo).toNotExist();
+                return done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          });
+      })
+      .catch(err => {
+        done(err);
+      });
+  });
+
+  it("should return 400 and not delete any todo", (done) => {
+    var _id = new ObjectID(1234).toHexString();
+    var text = "foo";
+    new Todo({ text, _id }).save()
+      .then(_ => {
+        request(app)
+          .delete(`/todos/${_id + "BAA"}`)
+          .expect(400)
+          .end((err, res) => {
+            if (err)
+              return done(err);
+            // No todo deleted
+            Todo.find({}).exec()
+              .then(todos => {
+                expect(todos.length).toBe(1);
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          });
+      })
+      .catch(err => {
+        done(err);
+      });
+  });
+
+  it("should return 404 and not delete any todo", (done) => {
+    var _id = new ObjectID(1234).toHexString();
+    var _id_ = new ObjectID(4321).toHexString();
+    var text = "foo";
+    new Todo({ text, _id }).save()
+      .then(_ => {
+        request(app)
+          .delete(`/todos/${_id_}`)
+          .expect(404)
+          .end((err, res) => {
+            if (err)
+              return done(err);
+            // No todo deleted
+            Todo.find({}).exec()
+              .then(todos => {
+                expect(todos.length).toBe(1);
+                done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          });
+      })
+      .catch(err => done(err));
+  });
+
 
 });

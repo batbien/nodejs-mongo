@@ -2,6 +2,7 @@
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const { ObjectID } = require("mongodb");
 
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
@@ -47,7 +48,28 @@ app.get("/todos/:id", (req, res) => {
       res.send(todo);
     })
     .catch(e => {
-      res.status(400).send(e);
+      res.status(400).send(e.message);
+    });
+});
+
+// Delete ont todo with the given id
+app.delete("/todos/:id", (req, res) => {
+  // Get the id
+  var id = req.params.id;
+
+  // Validate the id
+  if (!ObjectID.isValid(id))
+    return res.status(400).send("Invalid ID");
+
+  // Delete and response
+  Todo.findByIdAndDelete(id).exec()
+    .then(todo => {
+      if (!todo)
+        return res.status(404).send(`No todo with id = ${id} found`);
+      res.send(todo);
+    })
+    .catch(e => {
+      res.status(500).send(e.message);
     });
 });
 
