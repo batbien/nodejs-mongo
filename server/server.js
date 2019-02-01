@@ -1,8 +1,11 @@
 'use strict';
 
+require('../config.js');
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const { ObjectID } = require("mongodb");
+const _ = require("lodash");
 
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
@@ -52,7 +55,7 @@ app.get("/todos/:id", (req, res) => {
     });
 });
 
-// Delete ont todo with the given id
+// Delete the todo with the given id
 app.delete("/todos/:id", (req, res) => {
   // Get the id
   var id = req.params.id;
@@ -72,6 +75,35 @@ app.delete("/todos/:id", (req, res) => {
       res.status(500).send(e.message);
     });
 });
+
+
+// Update the todo with the given id
+app.patch("/todos/:id", (req, res) => {
+  var id = req.params.id;
+  var update = _.pick(req.body, ["text", "completed"]);
+
+  if (!ObjectID.isValid(id))
+    return res.status(400).send("Invalid ID");
+
+  if (_.isBoolean(update.completed) && update.completed)
+    update.completedAt = new Date().getTime();
+  else if (_.isBoolean(update.completed) && !update.completed)
+    update.completedAt = null;
+  else
+    return res.status(400).send("completed: Invalid value");
+
+  // Update the todo
+  Todo.findByIdAndUpdate(id, { $set: update }, { new: true }).exec()
+    .then(updatedTodo => {
+      if (!updatedTodo)
+        return res.status(404).send(`No todo with id = ${id} found`);
+      res.send(updatedTodo);
+    })
+    .catch(err => {
+      res.status(500).send("Server error");
+    });
+
+})
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);

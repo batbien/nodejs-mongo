@@ -2,6 +2,7 @@
 
 const expect = require('expect');
 const request = require('supertest');
+const _ = require("lodash");
 
 const { ObjectID } = require("mongodb");
 const { app } = require("../server");
@@ -220,5 +221,88 @@ describe("DELETE /todos/:id", () => {
       .catch(err => done(err));
   });
 
+
+});
+
+
+describe("PATCH /todos/:id", () => {
+
+  it("should return 200 and successfully update the todo", done => {
+    // First init the collection
+    var _id = new ObjectID(1234).toHexString();
+    var text = "foo";
+    var before = new Date().getTime();
+    new Todo({ text, _id }).save()
+      .then(() => {
+        request(app)
+          .patch(`/todos/${_id}`)
+          .send({
+            text: "bar",
+            completed: true
+          })
+          .expect(200)
+          .end((err, res) => {
+            if (err)
+              return done(err);
+            expect(res.body._id).toBe(_id);
+            // Updated the correct todo correctly
+            Todo.findById(_id).exec()
+              .then(todo => {
+                var after = new Date().getTime();
+                expect(_.pick(todo, ["text", "completed"]))
+                  .toEqual({
+                    text: "bar",
+                    completed: true
+                  });
+                expect(todo.completedAt).toBeGreaterThan(before).toBeLessThan(after);
+                return done();
+              })
+              .catch(err => {
+                done(err);
+              });
+          });
+      })
+      .catch(err => {
+        done(err);
+      });
+  });
+
+
+    it("should return 400 and not update the todo", done => {
+      // First init the collection
+      var _id = new ObjectID(1234).toHexString();
+      var text = "foo";
+      new Todo({ text, _id }).save()
+        .then(() => {
+          request(app)
+            .patch(`/todos/${_id}`)
+            .send({
+              text: "bar",
+              completed: "invalid"
+            })
+            .expect(400)
+            .end((err, res) => {
+              if (err)
+                return done(err);
+              // Not update the todo
+              Todo.findById(_id).exec()
+                .then(todo => {
+                  expect(_.pick(todo, ["text", "completed", "completedAt"]))
+                    .toEqual({
+                      text: "foo",
+                      completed: false,
+                      completedAt: null
+                    });
+                  return done();
+                })
+                .catch(err => {
+                  done(err);
+                });
+            });
+        })
+        .catch(err => {
+          done(err);
+        });
+    });
 
 });
