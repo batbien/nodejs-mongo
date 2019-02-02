@@ -9,6 +9,7 @@ const _ = require("lodash");
 
 const { Todo } = require('./models/todo');
 const { User } = require('./models/user');
+const { authenticate } = require("./middlewares/authenticate");
 
 const app = express();
 const port = process.env.PORT || 3333;
@@ -20,15 +21,6 @@ app.post("/todos", (req, res) => {
   todo.save((err, doc) => {
     if (err)
       return res.status(400).send(err.message);
-    res.status(200).send(doc);
-  })
-})
-
-app.post("/users", (req, res) => {
-  var user = new User(req.body)
-  user.save((err, doc) => {
-    if (err)
-      res.status(400).send(err.message);
     res.status(200).send(doc);
   })
 })
@@ -103,6 +95,29 @@ app.patch("/todos/:id", (req, res) => {
       res.status(500).send("Server error");
     });
 
+})
+
+
+app.post("/users", (req, res) => {
+  var user = new User(req.body)
+  // var {email, password} = req.body;
+
+  user.save().then(
+      () => { return user.generateAuthToken() })
+    .then(
+      token => { res.header("x-auth", token).send(user); }
+    )
+    .catch(
+      err => { res.status(400).send(err.message); }
+    );
+});
+
+
+
+
+
+app.get("/users/me", authenticate, (req, res) => {
+  res.send(req.user);
 })
 
 app.listen(port, () => {

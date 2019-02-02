@@ -17,8 +17,10 @@
   "dependencies": {
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
+    "jsonwebtoken": "^8.4.0",
     "mongodb": "^3.1.13",
-    "mongoose": "^5.4.8"
+    "mongoose": "^5.4.8",
+    "validator": "^10.11.0"
   },
   "devDependencies": {
     "expect": "^1.20.2",
