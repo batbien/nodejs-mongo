@@ -1,6 +1,7 @@
 var node_env = process.env.NODE_ENV || "development";
 var user = process.env.USER || "nhd";
 
+
 if (user === "nhd") {
   if (node_env === "test")
     process.env.MONGODB_URI = "mongodb://localhost:27017/TodoAppTest";
@@ -12,3 +13,7 @@ if (user === "nhd") {
   else
     process.env.MONGODB_URI = "mongodb://tabneib:foobar123@ds143474.mlab.com:43474/todoapp_tabneib";
 }
+
+
+console.log("=============> process.env.USER: ", process.env.USER);
+console.log("=============> process.env.MONGODB_URI: ", process.env.MONGODB_URI);
