@@ -21,7 +21,7 @@ var UserSchema = new mongoose.Schema({
     minlength: 6,
     require: true
   },
-  tokens: {
+  tokens: [{
     access: {
       type: String,
       require: true
@@ -30,14 +30,14 @@ var UserSchema = new mongoose.Schema({
       type: String,
       require: true
     }
-  }
+  }]
 });
 
 UserSchema.methods.generateAuthToken = function() {
   var token = jwt.sign({ _id: this._id, access: "auth" }, "foobar");
-  this.tokens = { access: "auth", token };
+  this.tokens.push({ access: "auth", token });
   return this.save().then(
-    () => { return token; }
+    () => { return Promise.resolve(token); }
   );
 };
 
@@ -49,10 +49,14 @@ UserSchema.statics.findByToken = (token) => {
   try {
     var decoded = jwt.verify(token, "foobar");
     return User.findOne({
-      "_id": decoded._id,
-      "tokens.token": token,
-      "tokens.access": decoded.access
-    });
+      "_id": decoded._id
+    }).then(
+      user => {
+        return user.tokens.filter(
+            t => { return t.access == decoded.access && t.token == token })
+          .length == 1 ? Promise.resolve(user) : Promise.reject();
+      }
+    )
   } catch (err) {
     return Promise.reject(err.message);
   };
@@ -79,7 +83,7 @@ UserSchema.statics.findByCredential = function(credential) {
 UserSchema.pre("save", function(next) {
   if (!this.isModified("password"))
     return next();
-  bcrypt.genSalt(1, (err, salt) => {
+  bcrypt.genSalt(10, (err, salt) => {
     if (err)
       return next(err);
     bcrypt.hash(this.password, salt, (err, hash) => {
@@ -90,6 +94,15 @@ UserSchema.pre("save", function(next) {
     });
   });
 });
+
+// This must be called after user has been authenticated
+UserSchema.methods.removeToken = function(token) {
+  return this.updateOne({
+    $pull: {
+      tokens: { token }
+    }
+  }).exec();
+};
 
 var User = mongoose.model('users', UserSchema);
 

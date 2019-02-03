@@ -250,11 +250,12 @@ describe("POST /users", () => {
         // Get the newly added user
         User.findOne({ email }).exec()
           .then(user => {
+            var token = jwt.sign({ _id: user.id, access: "auth" }, "foobar");
             expect(user).toExist();
-            expect(user.tokens.access).toEqual("auth");
-            expect(user.tokens.token)
-              .toEqual(jwt.sign({ _id: user.id, access: "auth" }, "foobar"));
-            expect(res.header["x-auth"]).toEqual(user.tokens.token);
+            expect(user.tokens.toObject().filter(t => {
+              return t.token === token && t.access == "auth"
+            }).length).toBe(1);
+            expect(res.header["x-auth"]).toEqual(token);
             done();
           })
           .catch(err => { done(err); });
@@ -287,7 +288,7 @@ describe("GET /users/me", () => {
 
   it("should return 200 and authorize the user", done => {
 
-    var token = users[0].tokens.token;
+    var token = users[0].tokens[0].token;
     request(app)
       .get("/users/me")
       .set("x-auth", token)
@@ -310,7 +311,7 @@ describe("POST /users/login", () => {
   it("should succefully login", done => {
     var email = users[0].email;
     var password = "pwd";
-    var token = users[0].tokens.token;
+    var token = users[0].tokens[0].token;
     request(app)
       .post("/users/login")
       .send({ email, password })
@@ -322,6 +323,33 @@ describe("POST /users/login", () => {
         done();
       });
   });
+
+
+  it("should succefully login and create an auth token for the user", done => {
+    var email = users[1].email;
+    var password = "pwd";
+    request(app)
+      .post("/users/login")
+      .send({ email, password })
+      .expect(200)
+      .end((err, res) => {
+        if (err)
+          return done(err);
+        // Check if an auth token is created
+        User.findById(users[1]._id).then(
+            user => {
+              var authTokens = user.tokens.filter(t => { return t.access === "auth" });
+              expect(authTokens.length).toBe(1);
+              expect(res.header["x-auth"]).toEqual(authTokens[0].token);
+              done();
+            }
+          )
+          .catch(
+            err => { done(err); }
+          );
+      });
+  });
+
 
   it("should reject login due to wrong password", done => {
     var email = users[0].email;
@@ -350,6 +378,53 @@ describe("POST /users/login", () => {
           return done(err);
         expect(res.header["x-auth"]).toNotExist();
         done();
+      });
+  });
+
+});
+
+
+describe("DELETE /users/me/token", () => {
+
+  it("should delete the auth token successfully", done => {
+    var token = users[0].tokens[0].token;
+    request(app)
+      .delete("/users/me/token")
+      .set("x-auth", token)
+      .expect(200)
+      .end((err, res) => {
+        if (err)
+          return done(err);
+        User.findById(users[0]._id).then(
+            user => {
+              expect(user.tokens.filter(t => { return t.token === token }).length).toBe(0);
+              done();
+            }
+          )
+          .catch(
+            err => { done(err); });
+      });
+  });
+
+  it("should not logout successfully due to wrong token", done => {
+    var token = new ObjectID().toHexString();
+    request(app)
+      .delete("/users/me/token")
+      .set("x-auth", token)
+      .expect(401)
+      .end((err, res) => {
+        if (err)
+          return done(err);
+        User.find({}).then(
+            users => {
+              expect(users.filter(u => {
+                return (u.tokens.filter(t => { return t.access === "auth" }).length === 1);
+              }).length).toBe(1);
+              done();
+            }
+          )
+          .catch(
+            err => { done(err); });
       });
   });
 

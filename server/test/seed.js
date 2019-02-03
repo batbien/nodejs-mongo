@@ -27,10 +27,10 @@ const users = [{
     _id: fooId,
     email: "foo@foo.com",
     password: "pwd",
-    tokens: {
+    tokens: [{
       access: "auth",
       token: fooToken
-    }
+    }]
   },
   {
     _id: barId,

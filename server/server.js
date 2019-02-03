@@ -126,12 +126,36 @@ app.post("/users/login", (req, res) => {
   var credential = _.pick(req.body, ["email", "password"]);
   User.findByCredential(credential)
     .then(user => {
-      res.header("x-auth", user.tokens.token).send("Login successful");
+      var authTokens = user.tokens.filter(t => { return t.access === "auth"; });
+      // console.log("authTokens: ", authTokens);
+      if (authTokens.length >= 1)
+        return res.header("x-auth", authTokens[0].token).send("Login successful");
+      else
+        user.generateAuthToken().then(
+          token => {
+            return res.header("x-auth", token).send("Login successful");
+          }
+        );
     })
     .catch(err => {
       res.status(401).send("Login failed");
     });
 })
+
+app.delete("/users/me/token", authenticate, (req, res) => {
+  var user = req.user;
+  var token = req.token;
+  user.removeToken(token)
+    .then(() => {
+      res.send("Logout successfully");
+    })
+    .catch(
+      err => {
+        console.log("err: ", err);
+        res.status(400).send();
+      }
+    );
+});
 
 module.exports = {
   app
