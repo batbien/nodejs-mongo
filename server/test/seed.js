@@ -6,8 +6,8 @@ const bcrypt = require("bcryptjs");
 
 var fooId = new ObjectID();
 var barId = new ObjectID();
-var fooToken = jwt.sign({ _id: fooId, access: "auth" }, "foobar");
-var barToken = jwt.sign({ _id: barId, access: "auth" }, "foobar");
+var fooToken = jwt.sign({ _id: fooId, access: "auth" }, process.env.JWT_SECRET);
+var barToken = jwt.sign({ _id: barId, access: "auth" }, process.env.JWT_SECRET);
 
 const users = [{
     _id: fooId,

@@ -275,7 +275,7 @@ describe("POST /users", () => {
         // Get the newly added user
         User.findOne({ email }).exec()
           .then(user => {
-            var token = jwt.sign({ _id: user.id, access: "auth" }, "foobar");
+            var token = jwt.sign({ _id: user.id, access: "auth" }, process.env.JWT_SECRET);
             expect(user).toExist();
             expect(user.tokens.toObject().filter(t => {
               return t.token === token && t.access == "auth"

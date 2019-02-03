@@ -1,6 +1,6 @@
 'use strict';
 
-require('../config.js');
+require('../config/config.js');
 
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -13,7 +13,6 @@ const { User } = require('./models/user');
 const { authenticate } = require("./middlewares/authenticate");
 
 const app = express();
-const port = process.env.PORT || 3333;
 
 app.use(bodyParser.json());
 
@@ -128,15 +127,9 @@ app.post("/users", (req, res) => {
     );
 });
 
-
 app.get("/users/me", authenticate, (req, res) => {
   res.send(req.user);
 })
-
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
-
 
 app.post("/users/login", (req, res) => {
   var credential = _.pick(req.body, ["email", "password"]);
@@ -171,6 +164,10 @@ app.delete("/users/me/token", authenticate, (req, res) => {
         res.status(400).send();
       }
     );
+});
+
+app.listen(process.env.PORT, () => {
+  console.log(`Server listening on port ${process.env.PORT}`);
 });
 
 module.exports = {
