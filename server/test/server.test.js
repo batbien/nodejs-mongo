@@ -18,11 +18,16 @@ beforeEach("Clearing todos collection", (done) => {
     .catch(err => { done(err); });
 });
 
+//----------------------------------------------------------------------------->
+//                                  POST /todos
+//<-----------------------------------------------------------------------------
+
 describe('Test POST /todos', () => {
   var text = "third todo";
   it('should return status 200 and correctly add the todo to db', (done) => {
     request(app)
       .post('/todos')
+      .set("x-auth", users[0].tokens[0].token)
       .send({ text })
       .expect(200)
       .end((err, res) => {
@@ -42,6 +47,7 @@ describe('Test POST /todos', () => {
   it("should return status 400 and NOT add the todo to db", (done) => {
     request(app)
       .post('/todos')
+      .set("x-auth", users[0].tokens[0].token)
       .send({ foo: "foo" })
       .expect(400)
       .expect(res => {
@@ -61,29 +67,38 @@ describe('Test POST /todos', () => {
   });
 });
 
+//----------------------------------------------------------------------------->
+//                                  GET /todos
+//<-----------------------------------------------------------------------------
+
 describe("Test GET /todos", () => {
 
-  it("should return the correct set of todos", done => {
+  it("should return the correct set of todos for the first user", done => {
     request(app)
       .get("/todos")
+      .set("x-auth", users[0].tokens[0].token)
       .expect(200)
       .expect(res => {
-        expect(res.body.length).toBe(todos.length);
-        for (var i = 0; i < res.body.length; i++)
-          expect(res.body[i].text).toBe(todos[i].text);
+        expect(res.body.length).toBe(1);
+        expect(res.body[0].text).toBe(todos[0].text);
       })
       .end(done);
   });
 
 });
 
+//----------------------------------------------------------------------------->
+//                                  GET /todos/:id
+//<-----------------------------------------------------------------------------
+
 describe("Test GET /todos/:id", () => {
 
-  it("should return status 200 & the correct todo", done => {
+  it("should return status 200 & the first todo", done => {
     // Get the id
     var id = todos[0]._id;
     request(app)
       .get(`/todos/${id}`)
+      .set("x-auth", users[0].tokens[0].token)
       .expect(200)
       .end((err, res) => {
         if (err)
@@ -99,6 +114,7 @@ describe("Test GET /todos/:id", () => {
   it("should return status 404", done => {
     request(app)
       .get(`/todos/${new ObjectID()}`)
+      .set("x-auth", users[0].tokens[0].token)
       .expect(404)
       .end((err, res) => {
         if (err)
@@ -109,12 +125,17 @@ describe("Test GET /todos/:id", () => {
 
 });
 
-describe("DELETE /todos/:id", () => {
+//----------------------------------------------------------------------------->
+//                              DELETE /todos/:id
+//<-----------------------------------------------------------------------------
+
+describe("Test DELETE /todos/:id", () => {
 
   it("should return 200 and delete one todo with the given id", (done) => {
     var id = todos[0]._id;
     request(app)
       .delete(`/todos/${id}`)
+      .set("x-auth", users[0].tokens[0].token)
       .expect(200)
       .end((err, res) => {
         if (err)
@@ -134,6 +155,7 @@ describe("DELETE /todos/:id", () => {
   it("should return 400 and not delete any todo", (done) => {
     request(app)
       .delete(`/todos/${new ObjectID().toHexString() + "BAA"}`)
+      .set("x-auth", users[0].tokens[0].token)
       .expect(400)
       .end((err, res) => {
         if (err)
@@ -153,6 +175,7 @@ describe("DELETE /todos/:id", () => {
   it("should return 404 and not delete any todo", (done) => {
     request(app)
       .delete(`/todos/${new ObjectID().toHexString()}`)
+      .set("x-auth", users[0].tokens[0].token)
       .expect(404)
       .end((err, res) => {
         if (err)
@@ -182,6 +205,7 @@ describe("PATCH /todos/:id", () => {
     var text = "patched first todo";
     request(app)
       .patch(`/todos/${id}`)
+      .set("x-auth", users[0].tokens[0].token)
       .send({ text, completed: true })
       .expect(200)
       .end((err, res) => {
@@ -207,6 +231,7 @@ describe("PATCH /todos/:id", () => {
     var id = todos[0]._id;
     request(app)
       .patch(`/todos/${id}`)
+      .set("x-auth", users[0].tokens[0].token)
       .send({
         text: "bar",
         completed: "invalid"

@@ -4,22 +4,8 @@ const { ObjectID } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-const todos = [{
-    _id: new ObjectID().toHexString(),
-    text: "first todo",
-    completed: false,
-    completedAt: null
-  },
-  {
-    _id: new ObjectID().toHexString(),
-    text: "second todo",
-    completed: false,
-    completedAt: null
-  }
-];
-
-var fooId = new ObjectID().toHexString();
-var barId = new ObjectID().toHexString();
+var fooId = new ObjectID();
+var barId = new ObjectID();
 var fooToken = jwt.sign({ _id: fooId, access: "auth" }, "foobar");
 var barToken = jwt.sign({ _id: barId, access: "auth" }, "foobar");
 
@@ -36,6 +22,22 @@ const users = [{
     _id: barId,
     email: "bar@bar.com",
     password: "pwd"
+  }
+];
+
+const todos = [{
+    _id: new ObjectID().toHexString(),
+    text: "first todo",
+    completed: false,
+    completedAt: null,
+    _owner: fooId
+  },
+  {
+    _id: new ObjectID().toHexString(),
+    text: "second todo",
+    completed: false,
+    completedAt: null,
+    _owner: barId
   }
 ];
 

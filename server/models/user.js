@@ -1,4 +1,4 @@
-const { mongoose } = require('../db/mongoose');
+const mongoose= require('mongoose');
 const validator = require("validator");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
@@ -104,7 +104,7 @@ UserSchema.methods.removeToken = function(token) {
   }).exec();
 };
 
-var User = mongoose.model('users', UserSchema);
+var User = mongoose.model('User', UserSchema);
 
 
 module.exports = {
