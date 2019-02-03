@@ -51,7 +51,7 @@ describe('Test POST /todos', () => {
       .send({ foo: "foo" })
       .expect(400)
       .expect(res => {
-        expect(res.text).toInclude("failed");
+        expect(res.text).toContain("failed");
       })
       .end((err, res) => {
         if (err)
@@ -143,7 +143,7 @@ describe("Test DELETE /todos/:id", () => {
         // Deleted the correct todo
         Todo.findById(id).exec()
           .then(todo => {
-            expect(todo).toNotExist();
+            expect(todo).toBeFalsy();
             return done();
           })
           .catch(err => {
@@ -192,9 +192,11 @@ describe("Test DELETE /todos/:id", () => {
       });
   });
 
-
 });
 
+//----------------------------------------------------------------------------->
+//                              PATCH /todos/:id
+//<-----------------------------------------------------------------------------
 
 describe("PATCH /todos/:id", () => {
 
@@ -217,7 +219,8 @@ describe("PATCH /todos/:id", () => {
             var after = new Date().getTime();
             expect(_.pick(todo, ["text", "completed"]))
               .toEqual({ text, completed: true });
-            expect(todo.completedAt).toBeGreaterThan(before).toBeLessThan(after);
+            expect(todo.completedAt).toBeGreaterThan(before);
+            expect(todo.completedAt).toBeLessThan(after);
             return done();
           })
           .catch(err => {
@@ -259,6 +262,9 @@ describe("PATCH /todos/:id", () => {
 
 });
 
+//----------------------------------------------------------------------------->
+//                              POST /users
+//<-----------------------------------------------------------------------------
 
 describe("POST /users", () => {
 
@@ -276,7 +282,7 @@ describe("POST /users", () => {
         User.findOne({ email }).exec()
           .then(user => {
             var token = jwt.sign({ _id: user.id, access: "auth" }, process.env.JWT_SECRET);
-            expect(user).toExist();
+            expect(user).toBeTruthy();
             expect(user.tokens.toObject().filter(t => {
               return t.token === token && t.access == "auth"
             }).length).toBe(1);
@@ -309,6 +315,10 @@ describe("POST /users", () => {
 
 });
 
+//----------------------------------------------------------------------------->
+//                              GET /users/me
+//<-----------------------------------------------------------------------------
+
 describe("GET /users/me", () => {
 
   it("should return 200 and authorize the user", done => {
@@ -321,15 +331,19 @@ describe("GET /users/me", () => {
       .end((err, res) => {
         if (err)
           return done(err);
-        expect(res.body._id).toEqual(users[0]._id);
+        expect(res.body._id).toEqual(users[0]._id.toHexString());
         expect(res.body.email).toEqual(users[0].email);
-        expect(res.body.password).toNotExist();
+        expect(res.body.password).toBeFalsy();
         done();
       })
 
   });
 
 });
+
+//----------------------------------------------------------------------------->
+//                              POST /users/login
+//<-----------------------------------------------------------------------------
 
 describe("POST /users/login", () => {
 
@@ -386,7 +400,7 @@ describe("POST /users/login", () => {
       .end((err, res) => {
         if (err)
           return done(err);
-        expect(res.header["x-auth"]).toNotExist();
+        expect(res.header["x-auth"]).toBeFalsy();
         done();
       });
   });
@@ -401,13 +415,16 @@ describe("POST /users/login", () => {
       .end((err, res) => {
         if (err)
           return done(err);
-        expect(res.header["x-auth"]).toNotExist();
+        expect(res.header["x-auth"]).toBeFalsy();
         done();
       });
   });
 
 });
 
+//----------------------------------------------------------------------------->
+//                           DELETE /users/me/token
+//<-----------------------------------------------------------------------------
 
 describe("DELETE /users/me/token", () => {
 
