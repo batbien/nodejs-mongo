@@ -303,5 +303,54 @@ describe("GET /users/me", () => {
 
   });
 
+});
+
+describe("POST /users/login", () => {
+
+  it("should succefully login", done => {
+    var email = users[0].email;
+    var password = "pwd";
+    var token = users[0].tokens.token;
+    request(app)
+      .post("/users/login")
+      .send({ email, password })
+      .expect(200)
+      .end((err, res) => {
+        if (err)
+          return done(err);
+        expect(res.header["x-auth"]).toEqual(token);
+        done();
+      });
+  });
+
+  it("should reject login due to wrong password", done => {
+    var email = users[0].email;
+    var password = "pwd" + "make it wrong";
+    request(app)
+      .post("/users/login")
+      .send({ email, password })
+      .expect(401)
+      .end((err, res) => {
+        if (err)
+          return done(err);
+        expect(res.header["x-auth"]).toNotExist();
+        done();
+      });
+  });
+
+  it("should reject login due to wrong email", done => {
+    var email = "makeitwrong" + users[0].email;
+    var password = "pwd";
+    request(app)
+      .post("/users/login")
+      .send({ email, password })
+      .expect(401)
+      .end((err, res) => {
+        if (err)
+          return done(err);
+        expect(res.header["x-auth"]).toNotExist();
+        done();
+      });
+  });
 
 });

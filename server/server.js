@@ -121,6 +121,18 @@ app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
 
+
+app.post("/users/login", (req, res) => {
+  var credential = _.pick(req.body, ["email", "password"]);
+  User.findByCredential(credential)
+    .then(user => {
+      res.header("x-auth", user.tokens.token).send("Login successful");
+    })
+    .catch(err => {
+      res.status(401).send("Login failed");
+    });
+})
+
 module.exports = {
   app
 }

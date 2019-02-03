@@ -2,6 +2,7 @@ const { Todo } = require("../models/todo");
 const { User } = require("../models/user");
 const { ObjectID } = require("mongodb");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 const todos = [{
     _id: new ObjectID().toHexString(),
@@ -25,7 +26,7 @@ var barToken = jwt.sign({ _id: barId, access: "auth" }, "foobar");
 const users = [{
     _id: fooId,
     email: "foo@foo.com",
-    password: "foopwd",
+    password: "pwd",
     tokens: {
       access: "auth",
       token: fooToken
@@ -34,7 +35,7 @@ const users = [{
   {
     _id: barId,
     email: "bar@bar.com",
-    password: "barpwd"
+    password: "pwd"
   }
 ];
 
@@ -51,7 +52,13 @@ const populateTodos = () => {
 const populateUsers = () => {
   return User.deleteMany({})
     .then(
-      () => {
+      () => { return bcrypt.genSalt(10); })
+    .then(
+      salt => { return bcrypt.hash("pwd", salt); })
+    .then(
+      hash => {
+        for (var i = 0; i < users.length; i++)
+          users[i].password = hash;
         return User.insertMany(users);
       })
     .catch(err => { return Promise.reject });
